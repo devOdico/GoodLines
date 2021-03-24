@@ -76,7 +76,12 @@
                 }
 
                 float2 normal = (float2(-dir.y, dir.x));
-                normal *= len/2.0;
+                // One might think that we should "extrude" only half of the length,
+                // since the other point will also be moved away from this point by the same distance.
+                // However, we are actually only moving half of len pixels since the space we are working in
+                // is twice as large as the screen: (-width, +width) rather than (0, width) and same for the height.
+                // Essentially there are two factor of two which cancel each other out.
+                normal *= len;
                 normal *= _ScreenParams.zw - 1; // Equivalent to `normal /= _ScreenParams.xy` but with less division.
 
                 float2 offset = normal * v.orientation.x;
