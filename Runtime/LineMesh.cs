@@ -5,44 +5,10 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class LineMesh : MonoBehaviour
 {
-    private MeshFilter mf;
-
     // Start is called before the first frame update
     void Start()
     {
-        mf = GetComponent<MeshFilter>();
-
-        mf.mesh = new Mesh();
-
-        SetLineFromPoints(new List<Vector3>() {
-            new Vector3(0,0,0),
-            new Vector3(0.1f,1,0),
-            new Vector3(0.5f,1,0),
-            new Vector3(0.3f,1.6f,0),
-            new Vector3(0,1.6f,0),
-            new Vector3(-0.5f,1.3f,0),
-        });
-
-/*
-        var vertices = new Vector3[4];
-
-        vertices[0] = new Vector3(0,0,0);
-        vertices[1] = new Vector3(0.3f,0,0);
-        vertices[2] = new Vector3(0,1,0);
-        vertices[3] = new Vector3(0.3f,1,0);
-
-        var triangles = new int[6];
-        triangles[0] = 2;
-        triangles[1] = 1;
-        triangles[2] = 0;
-
-        triangles[3] = 1;
-        triangles[4] = 2;
-        triangles[5] = 3;
-
-        mf.mesh.vertices = vertices;
-        mf.mesh.triangles = triangles;
-*/
+       
     }
 
     // Update is called once per frame
@@ -52,6 +18,9 @@ public class LineMesh : MonoBehaviour
     }
 
     public void SetLineFromPoints(IList<Vector3> points) {
+        MeshFilter mf = GetComponent<MeshFilter>();
+
+        mf.mesh = new Mesh();
         // TODO assert points.Count > 1
 
         //Vertices, prev, next, direction, triangles

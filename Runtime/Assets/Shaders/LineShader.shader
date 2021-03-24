@@ -50,9 +50,10 @@
                 float4 prev = UnityObjectToClipPos(v.prev);
                 float4 next = UnityObjectToClipPos(v.next);
 
-                float2 current_screen = current.xy / current.w;
-                float2 prev_screen = prev.xy / prev.w;
-                float2 next_screen = next.xy / next.w;
+                float2 base = current.xy / current.w;
+                float2 current_screen = base * _ScreenParams.xy;
+                float2 prev_screen = prev.xy / prev.w * _ScreenParams.xy;
+                float2 next_screen = next.xy / next.w * _ScreenParams.xy;
 
                 float len = _Thickness;
                 float2 dir = float2(0,0);
@@ -67,7 +68,7 @@
                     float2 dirA = normalize(current_screen - prev_screen);
                     float2 dirB = normalize(next_screen - current_screen);
 
-                    float2 tangent = normalize(dirA+dirB);
+                    float2 tangent = (dirA+dirB)/2; //Divide by two normalizes since len is 2.
                     float2 perp_dirA = float2(-dirA.y, dirA.x);
                     float2 perp_tangent = float2(-tangent.y, tangent.x);
 
@@ -75,11 +76,12 @@
                     len = _Thickness / dot(perp_tangent, perp_dirA);
                 }
 
-                float2 normal = float2(-dir.y, dir.x);
+                float2 normal = (float2(-dir.y, dir.x));
                 normal *= len/2.0;
+                normal *= _ScreenParams.zw - 1; // Equivalent to `normal /= _ScreenParams.xy` but with less division.
 
-                float2 offset = normal*v.orientation.x;
-                o.vertex = float4(current_screen + offset, 0.0, 1.0);
+                float2 offset = normal * v.orientation.x;
+                o.vertex = float4(base + offset, 0.0, 1.0);
 
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
