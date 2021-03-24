@@ -50,8 +50,7 @@
                 float4 prev = UnityObjectToClipPos(v.prev);
                 float4 next = UnityObjectToClipPos(v.next);
 
-                float2 base = current.xy / current.w;
-                float2 current_screen = base * _ScreenParams.xy;
+                float2 current_screen = current.xy / current.w * _ScreenParams.xy;
                 float2 prev_screen = prev.xy / prev.w * _ScreenParams.xy;
                 float2 next_screen = next.xy / next.w * _ScreenParams.xy;
 
@@ -81,7 +80,7 @@
                 normal *= _ScreenParams.zw - 1; // Equivalent to `normal /= _ScreenParams.xy` but with less division.
 
                 float2 offset = normal * v.orientation.x;
-                o.vertex = float4(base + offset, 0.0, 1.0);
+                o.vertex = current + float4(offset*current.w, 0, 0)
 
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
