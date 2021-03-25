@@ -5,6 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class LineMesh : MonoBehaviour
 {
+    public List<Vector3> Positions = new List<Vector3>() {new Vector3(), new Vector3(1,0,0)};
     // Start is called before the first frame update
     void Start()
     {
@@ -17,10 +18,15 @@ public class LineMesh : MonoBehaviour
         
     }
 
+    void OnValidate() {
+        while (Positions.Count < 2) {
+            Positions.Add(new Vector3(0,0,0));
+        }
+        SetLineFromPoints(Positions);
+    }
+
     public void SetLineFromPoints(IList<Vector3> points) {
         MeshFilter mf = GetComponent<MeshFilter>();
-
-        mf.mesh = new Mesh();
         // TODO assert points.Count > 1
 
         //Vertices, prev, next, direction, triangles
@@ -87,11 +93,11 @@ public class LineMesh : MonoBehaviour
             triangles[b+8] = t+3;
         }
 
-        mf.mesh.SetVertices(verticies);
-        mf.mesh.SetUVs(1, prevs);
-        mf.mesh.SetUVs(2, nexts);
-        mf.mesh.SetUVs(3, direction);
-        mf.mesh.SetTriangles(triangles, 0);
+        mf.sharedMesh.SetVertices(verticies);
+        mf.sharedMesh.SetUVs(1, prevs);
+        mf.sharedMesh.SetUVs(2, nexts);
+        mf.sharedMesh.SetUVs(3, direction);
+        mf.sharedMesh.SetTriangles(triangles, 0);
     }
 }
 

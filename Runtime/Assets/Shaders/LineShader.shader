@@ -7,6 +7,8 @@
         _Color ("Color", Color) = (1,1,1,1)
         _MiterThreshold ("Miter Threshold", Range(-1,1)) = 0.8
         _Perspective ("Perspective", Range(0,1)) = 0
+        _PixelPerfect ("Pixel Perfect", Range(0,1)) = 1
+        _PixelAlignment ("Pixel Alignment", Range(-1, 1)) = 0
     }
     SubShader
     {
@@ -48,6 +50,8 @@
             float _ThicknessMultiplier;
             float _MiterThreshold;
             float _Perspective;
+            float _PixelPerfect;
+            float _PixelAlignment;
 
             v2f vert (appdata v)
             {
@@ -56,9 +60,11 @@
                 float4 prev = UnityObjectToClipPos(v.prev);
                 float4 next = UnityObjectToClipPos(v.next);
 
-                float2 current_screen = current.xy / current.w * _ScreenParams.xy;
-                float2 prev_screen = prev.xy / prev.w * _ScreenParams.xy;
-                float2 next_screen = next.xy / next.w * _ScreenParams.xy;
+                float2 half_screen = _ScreenParams.xy / 2;
+
+                float2 current_screen = floor(current.xy / current.w * half_screen + half_screen);
+                float2 prev_screen = floor(prev.xy / prev.w * half_screen + half_screen);
+                float2 next_screen = floor(next.xy / next.w * half_screen + half_screen);
 
                 float len = _Thickness * _ThicknessMultiplier;
                 float2 dir = float2(0,0);
@@ -86,16 +92,15 @@
                 }
 
                 float2 normal = (float2(-dir.y, dir.x));
-                // One might think that we should "extrude" only half of the length,
-                // since the other point will also be moved away from this point by the same distance.
-                // However, we are actually only moving half of len pixels since the space we are working in
-                // is twice as large as the screen: (-width, +width) rather than (0, width) and same for the height.
-                // Essentially there are two factor of two which cancel each other out.
                 normal *= len;
                 normal *= _ScreenParams.zw - 1; // Equivalent to `normal /= _ScreenParams.xy` but with less division.
 
                 float2 offset = normal * v.orientation.x;
-                o.vertex = current + float4(offset*pow(current.w, 1 - _Perspective), 0, 0)
+                float pixel_align = _PixelAlignment*.5 + .5;
+                float4 current_pixel_perfect = float4(((current_screen + pixel_align - half_screen) / half_screen) * current.w, 0, current.w);
+
+                float4 current_to_use = lerp(current, current_pixel_perfect, _PixelPerfect);
+                o.vertex = current_to_use + float4(offset*pow(current.w, 1 - _Perspective), 0, 0)
 
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
