@@ -2,8 +2,11 @@
 {
     Properties
     {
-        _Thickness ("Thickness", Range (0, 20)) = 1
+        _Thickness ("Thickness", Range (0, 10)) = 1
+        _ThicknessMultiplier ("Thickness Multiplier", Float) = 1
         _Color ("Color", Color) = (1,1,1,1)
+        _MiterThreshold ("Miter Threshold", Range(-1,1)) = 0.8
+        _Perspective ("Perspective", Range(0,1)) = 0
     }
     SubShader
     {
@@ -12,7 +15,7 @@
 
         Pass
         {
-
+            Cull Off
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -42,6 +45,9 @@
 
             float4 _Color;
             float _Thickness;
+            float _ThicknessMultiplier;
+            float _MiterThreshold;
+            float _Perspective;
 
             v2f vert (appdata v)
             {
@@ -54,7 +60,7 @@
                 float2 prev_screen = prev.xy / prev.w * _ScreenParams.xy;
                 float2 next_screen = next.xy / next.w * _ScreenParams.xy;
 
-                float len = _Thickness;
+                float len = _Thickness * _ThicknessMultiplier;
                 float2 dir = float2(0,0);
 
                 if(v.orientation.y == 1.0) {
@@ -67,12 +73,16 @@
                     float2 dirA = normalize(current_screen - prev_screen);
                     float2 dirB = normalize(next_screen - current_screen);
 
+                    float flip = sign(.1 + sign(dot(dirA,dirB) + _MiterThreshold));
+
+                    dirB *= flip;
+
                     float2 tangent = (dirA+dirB)/2; //Divide by two normalizes since len is 2.
                     float2 perp_dirA = float2(-dirA.y, dirA.x);
                     float2 perp_tangent = float2(-tangent.y, tangent.x);
 
                     dir = tangent;
-                    len = _Thickness / dot(perp_tangent, perp_dirA);
+                    len /= dot(perp_tangent, perp_dirA);
                 }
 
                 float2 normal = (float2(-dir.y, dir.x));
@@ -85,7 +95,7 @@
                 normal *= _ScreenParams.zw - 1; // Equivalent to `normal /= _ScreenParams.xy` but with less division.
 
                 float2 offset = normal * v.orientation.x;
-                o.vertex = current + float4(offset*current.w, 0, 0)
+                o.vertex = current + float4(offset*pow(current.w, 1 - _Perspective), 0, 0)
 
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;

@@ -29,7 +29,7 @@ public class LineMesh : MonoBehaviour
         Vector3[] nexts = new Vector3[points.Count*2];
         Vector2[] direction = new Vector2[points.Count*2];
 
-        int[] triangles = new int[(points.Count - 1)*6];
+        int[] triangles = new int[(points.Count - 1)*9];
 
         //Set first element
         verticies[0] = points[0];
@@ -71,16 +71,20 @@ public class LineMesh : MonoBehaviour
         }
 
         for (int i = 0; i < points.Count - 1; ++i) {
-            int b = i*6;
+            int b = i*9;
             int t = i*2;
 
             triangles[b+0] = t+3;
             triangles[b+1] = t+1;
             triangles[b+2] = t+0;
 
-            triangles[b+3] = t+0;
-            triangles[b+4] = t+2;
-            triangles[b+5] = t+3;
+            triangles[b+3] = t+2;
+            triangles[b+4] = t+1;
+            triangles[b+5] = t+0;
+
+            triangles[b+6] = t+0;
+            triangles[b+7] = t+2;
+            triangles[b+8] = t+3;
         }
 
         mf.mesh.SetVertices(verticies);
