@@ -2,40 +2,68 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter))]
-public class LineMesh : MonoBehaviour
-{
-    public List<Vector3> Positions = new List<Vector3>() {new Vector3(), new Vector3(1,0,0)};
-    // Start is called before the first frame update
-    void Start()
-    {
-       
+public class LineMeshData {
+    private Vector3[] verticies;
+    private Vector3[] prevs;
+    private Vector3[] nexts;
+    private Vector2[] data;
+
+    private int[] triangles;
+
+    private Mesh mesh;
+
+    public LineMeshData(Mesh mesh) {
+        this.mesh = mesh;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    void OnValidate() {
-        while (Positions.Count < 2) {
-            Positions.Add(new Vector3(0,0,0));
+    public Vector3 this[int i] {
+        get {
+            return verticies[i*2];
         }
-        SetLineFromPoints(Positions);
+        set {
+            if (i == 0) {
+                verticies[0] = value;
+                verticies[1] = value;
+
+                prevs[2] = value;
+                prevs[3] = value;
+            }
+            else if (i * 2 == verticies.Length - 2) {
+                int b = i*2;
+                int b_prev = (i - 1)*2;
+
+                verticies[b+0] = value;
+                verticies[b+1] = value;
+
+                nexts[b_prev+0] = value;
+                nexts[b_prev+1] = value;
+            }
+            else {
+                int b = i*2;
+                int b_prev = (i - 1)*2;
+                int b_next = (i + 1)*2;
+
+                verticies[b+0] = value;
+                verticies[b+1] = value;
+
+                nexts[b_prev+0] = value;
+                nexts[b_prev+1] = value;
+
+                prevs[b_next+0] = value;
+                prevs[b_next+1] = value;
+            }
+            UpdateMesh();
+        }
     }
 
     public void SetLineFromPoints(IList<Vector3> points) {
-        MeshFilter mf = GetComponent<MeshFilter>();
-        // TODO assert points.Count > 1
-
         //Vertices, prev, next, direction, triangles
-        Vector3[] verticies = new Vector3[points.Count*2];
-        Vector3[] prevs = new Vector3[points.Count*2];
-        Vector3[] nexts = new Vector3[points.Count*2];
-        Vector2[] direction = new Vector2[points.Count*2];
+        verticies = new Vector3[points.Count*2];
+        prevs = new Vector3[points.Count*2];
+        nexts = new Vector3[points.Count*2];
+        data = new Vector2[points.Count*2];
 
-        int[] triangles = new int[(points.Count - 1)*9];
+        triangles = new int[(points.Count - 1)*9];
 
         //Set first element
         verticies[0] = points[0];
@@ -44,8 +72,8 @@ public class LineMesh : MonoBehaviour
         prevs[1] = points[0];
         nexts[0] = points[1];
         nexts[1] = points[1];
-        direction[0] = new Vector2(1, 1);
-        direction[1] = new Vector2(-1, 1);
+        data[0] = new Vector2(1, 1);
+        data[1] = new Vector2(-1, 1);
 
         //Set last element
         int lp = points.Count - 1;
@@ -56,8 +84,8 @@ public class LineMesh : MonoBehaviour
         prevs[l+1] = points[lp-1];
         nexts[l+0] = points[lp];
         nexts[l+1] = points[lp];
-        direction[l+0] = new Vector2(1, 2);
-        direction[l+1] = new Vector2(-1, 2);
+        data[l+0] = new Vector2(1, 2);
+        data[l+1] = new Vector2(-1, 2);
 
         //Set all but first and last
         for (int i = 1; i < points.Count - 1; ++i) {
@@ -72,8 +100,8 @@ public class LineMesh : MonoBehaviour
             nexts[b+0] = points[i+1];
             nexts[b+1] = points[i+1];
 
-            direction[b+0] = new Vector2(1, 0);
-            direction[b+1] = new Vector2(-1, 0);
+            data[b+0] = new Vector2(1, 0);
+            data[b+1] = new Vector2(-1, 0);
         }
 
         for (int i = 0; i < points.Count - 1; ++i) {
@@ -93,91 +121,52 @@ public class LineMesh : MonoBehaviour
             triangles[b+8] = t+3;
         }
 
-        mf.sharedMesh.SetVertices(verticies);
-        mf.sharedMesh.SetUVs(1, prevs);
-        mf.sharedMesh.SetUVs(2, nexts);
-        mf.sharedMesh.SetUVs(3, direction);
-        mf.sharedMesh.SetTriangles(triangles, 0);
+        mesh.Clear();
+        UpdateMesh();
+    }
+
+    private void UpdateMesh() {
+        mesh.SetVertices(verticies);
+        mesh.SetUVs(1, prevs);
+        mesh.SetUVs(2, nexts);
+        mesh.SetUVs(3, data);
+        mesh.SetTriangles(triangles, 0);
+        //mesh.RecalculateBounds();
     }
 }
 
-/// <summary>
-/// Edit a line shaped mesh in place as a list of points, while maintaining the line shape.
-/// </summary>
-public class LinePoints : IList<Vector3>
+[RequireComponent(typeof(MeshFilter))]
+[ExecuteAlways]
+public class LineMesh : MonoBehaviour
 {
-    private Mesh mesh;
+    public List<Vector3> Positions = new List<Vector3>() {new Vector3(), new Vector3(1,0,0)};
 
-    public LinePoints(Mesh mesh) {
-        // TODO: Assert that mesh is line shaped.
-        this.mesh = mesh;
-    }
-
-    public void SetPoints(IList<Vector3> points) {
-    }
-
-    public Vector3 this[int index] {
+    private LineMeshData _meshData;
+    public LineMeshData MeshData {
         get {
-            // TODO: Does this create a copy of the entire array?
-            return mesh.vertices[index*2];
-        }
-        set { 
-            mesh.vertices[index*2] = value;
-            mesh.vertices[index*2+1] = value;
+            if (_meshData == null) {
+                _meshData = new LineMeshData(GetComponent<MeshFilter>().sharedMesh);
+            }
+            return _meshData;
         }
     }
-
-    public int Count => mesh.vertexCount/2;
-
-    public bool IsReadOnly => throw new System.NotImplementedException();
-
-    public void Add(Vector3 item)
+    // Start is called before the first frame update
+    void Start()
     {
-        throw new System.NotImplementedException();
+       
     }
 
-    public void Clear()
+    // Update is called once per frame
+    void Update()
     {
-        mesh.Clear();
+        
     }
 
-    public bool Contains(Vector3 item)
-    {
-        throw new System.NotImplementedException();
+    void OnValidate() {
+        while (Positions.Count < 2) {
+            Positions.Add(new Vector3(0,0,0));
+        }
+        MeshData.SetLineFromPoints(Positions);
     }
 
-    public void CopyTo(Vector3[] array, int arrayIndex)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public IEnumerator<Vector3> GetEnumerator()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public int IndexOf(Vector3 item)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void Insert(int index, Vector3 item)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public bool Remove(Vector3 item)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void RemoveAt(int index)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        throw new System.NotImplementedException();
-    }
 }
