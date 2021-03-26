@@ -7,7 +7,6 @@
         _Color ("Color", Color) = (1,1,1,1)
         _MiterThreshold ("Miter Threshold", Range(-1,1)) = 0.8
         _Perspective ("Perspective", Range(0,1)) = 0
-        _PixelPerfect ("Pixel Perfect", Range(0,1)) = 1
         _PixelAlignment ("Pixel Alignment", Range(-1, 1)) = 0
     }
     SubShader
@@ -50,7 +49,6 @@
             float _ThicknessMultiplier;
             float _MiterThreshold;
             float _Perspective;
-            float _PixelPerfect;
             float _PixelAlignment;
 
             v2f vert (appdata v)
@@ -99,8 +97,7 @@
                 float pixel_align = _PixelAlignment*.5 + .5;
                 float4 current_pixel_perfect = float4(((current_screen + pixel_align - half_screen) / half_screen) * current.w, 0, current.w);
 
-                float4 current_to_use = lerp(current, current_pixel_perfect, _PixelPerfect);
-                o.vertex = current_to_use + float4(offset*pow(current.w, 1 - _Perspective), 0, 0)
+                o.vertex = current_pixel_perfect + float4(offset*pow(current.w, 1 - _Perspective), 0, 0)
 
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
