@@ -145,7 +145,9 @@ public class LineMesh : MonoBehaviour
     public LineMeshData MeshData {
         get {
             if (_meshData == null) {
-                _meshData = new LineMeshData(GetComponent<MeshFilter>().sharedMesh);
+                var mf = GetComponent<MeshFilter>();
+                mf.sharedMesh = new Mesh();
+                _meshData = new LineMeshData(mf.sharedMesh);
             }
             return _meshData;
         }
@@ -153,7 +155,10 @@ public class LineMesh : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       
+        while (Positions.Count < 2) {
+            Positions.Add(new Vector3(0,0,0));
+        }
+        MeshData.SetLineFromPoints(Positions);
     }
 
     // Update is called once per frame
@@ -163,10 +168,12 @@ public class LineMesh : MonoBehaviour
     }
 
     void OnValidate() {
-        while (Positions.Count < 2) {
-            Positions.Add(new Vector3(0,0,0));
+        if (_meshData != null) {
+            while (Positions.Count < 2) {
+                Positions.Add(new Vector3(0,0,0));
+            }
+            MeshData.SetLineFromPoints(Positions);
         }
-        MeshData.SetLineFromPoints(Positions);
     }
 
 }
