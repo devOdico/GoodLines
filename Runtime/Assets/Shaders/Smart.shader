@@ -8,7 +8,7 @@
         _MiterThreshold ("Miter Threshold", Range(-1,1)) = 0.8
         _Perspective ("Perspective", Range(0,1)) = 0
         _PixelAlignment ("Pixel Alignment", Range(-1, 1)) = 0
-        _PixelAlignThreshold ("Pixel Align Threshold", Range(0,10)) = 1
+        _PixelAlignThreshold ("Pixel Align Threshold", Range(0,10)) = 0.01
     }
     SubShader
     {
