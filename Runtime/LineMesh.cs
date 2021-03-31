@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class LineMeshData {
     private Vector3[] verticies;
@@ -56,71 +57,82 @@ public class LineMeshData {
         }
     }
 
-    public void SetLineFromPoints(IList<Vector3> points) {
+    public void SetLinesFromPoints(List<List<Vector3>> lines) {
+        int totalCount = lines.Select(points => points.Count).Sum();
+
         //Vertices, prev, next, direction, triangles
-        verticies = new Vector3[points.Count*2];
-        prevs = new Vector3[points.Count*2];
-        nexts = new Vector3[points.Count*2];
-        data = new Vector2[points.Count*2];
+        verticies = new Vector3[totalCount*2];
+        prevs = new Vector3[totalCount*2];
+        nexts = new Vector3[totalCount*2];
+        data = new Vector2[totalCount*2];
 
-        triangles = new int[(points.Count - 1)*9];
+        triangles = new int[(totalCount - 1)*9]; // This over allocates I think?
 
-        //Set first element
-        verticies[0] = points[0];
-        verticies[1] = points[0];
-        prevs[0] = points[0];
-        prevs[1] = points[0];
-        nexts[0] = points[1];
-        nexts[1] = points[1];
-        data[0] = new Vector2(1, 1);
-        data[1] = new Vector2(-1, 1);
+        int lineStart = 0;
 
-        //Set last element
-        int lp = points.Count - 1;
-        int l = 2*lp;
-        verticies[l+0] = points[lp];
-        verticies[l+1] = points[lp];
-        prevs[l+0] = points[lp-1];
-        prevs[l+1] = points[lp-1];
-        nexts[l+0] = points[lp];
-        nexts[l+1] = points[lp];
-        data[l+0] = new Vector2(1, 2);
-        data[l+1] = new Vector2(-1, 2);
+        foreach (var points in lines) {
+            int lineIndex = lineStart * 2;
+            //Set first element
+            verticies[lineIndex + 0] = points[0];
+            verticies[lineIndex + 1] = points[0];
+            prevs[lineIndex + 0] = points[0];
+            prevs[lineIndex + 1] = points[0];
+            nexts[lineIndex + 0] = points[1];
+            nexts[lineIndex + 1] = points[1];
+            data[lineIndex + 0] = new Vector2(1, 1);
+            data[lineIndex + 1] = new Vector2(-1, 1);
 
-        //Set all but first and last
-        for (int i = 1; i < points.Count - 1; ++i) {
-            int b = i*2;
+            //Set last element
+            int lp = points.Count - 1;
+            int l = lineIndex + 2*lp;
+            verticies[l+0] = points[lp];
+            verticies[l+1] = points[lp];
+            prevs[l+0] = points[lp-1];
+            prevs[l+1] = points[lp-1];
+            nexts[l+0] = points[lp];
+            nexts[l+1] = points[lp];
+            data[l+0] = new Vector2(1, 2);
+            data[l+1] = new Vector2(-1, 2);
 
-            verticies[b+0] = points[i];
-            verticies[b+1] = points[i];
-  
-            prevs[b+0] = points[i-1];
-            prevs[b+1] = points[i-1];
+            //Set all but first and last
+            for (int i = 1; i < points.Count - 1; ++i) {
+                int b = lineIndex + i*2;
 
-            nexts[b+0] = points[i+1];
-            nexts[b+1] = points[i+1];
+                verticies[b+0] = points[i];
+                verticies[b+1] = points[i];
+    
+                prevs[b+0] = points[i-1];
+                prevs[b+1] = points[i-1];
 
-            data[b+0] = new Vector2(1, 0);
-            data[b+1] = new Vector2(-1, 0);
+                nexts[b+0] = points[i+1];
+                nexts[b+1] = points[i+1];
+
+                data[b+0] = new Vector2(1, 0);
+                data[b+1] = new Vector2(-1, 0);
+            }
+
+            for (int i = 0; i < points.Count - 1; ++i) {
+                int b = (lineStart + i)*9;
+                int t = lineIndex + i*2;
+
+                triangles[b+0] = t+3;
+                triangles[b+1] = t+1;
+                triangles[b+2] = t+0;
+
+                triangles[b+3] = t+2;
+                triangles[b+4] = t+1;
+                triangles[b+5] = t+0;
+
+                triangles[b+6] = t+0;
+                triangles[b+7] = t+2;
+                triangles[b+8] = t+3;
+            }
+
+            lineStart += points.Count;
+
         }
 
-        for (int i = 0; i < points.Count - 1; ++i) {
-            int b = i*9;
-            int t = i*2;
-
-            triangles[b+0] = t+3;
-            triangles[b+1] = t+1;
-            triangles[b+2] = t+0;
-
-            triangles[b+3] = t+2;
-            triangles[b+4] = t+1;
-            triangles[b+5] = t+0;
-
-            triangles[b+6] = t+0;
-            triangles[b+7] = t+2;
-            triangles[b+8] = t+3;
-        }
-
+       
         mesh.Clear();
         UpdateMesh();
     }
@@ -139,7 +151,7 @@ public class LineMeshData {
 [ExecuteAlways]
 public class LineMesh : MonoBehaviour
 {
-    public List<Vector3> Positions = new List<Vector3>() {new Vector3(), new Vector3(1,0,0)};
+    public List<List<Vector3>> Positions = new List<List<Vector3>>() {new List<Vector3>() {new Vector3(), new Vector3(1,0,0)}};
 
     private LineMeshData _meshData;
     public LineMeshData MeshData {
@@ -155,10 +167,13 @@ public class LineMesh : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        while (Positions.Count < 2) {
-            Positions.Add(new Vector3(0,0,0));
+        if (Positions.Count < 1) {
+            Positions.Add(new List<Vector3>());
         }
-        MeshData.SetLineFromPoints(Positions);
+        while (Positions[0].Count < 2) {
+            Positions[0].Add(new Vector3(0,0,0));
+        }
+        MeshData.SetLinesFromPoints(Positions);
     }
 
     // Update is called once per frame
@@ -169,11 +184,19 @@ public class LineMesh : MonoBehaviour
 
     void OnValidate() {
         if (_meshData != null) {
-            while (Positions.Count < 2) {
-                Positions.Add(new Vector3(0,0,0));
+            if (Positions.Count < 1) {
+                Positions.Add(new List<Vector3>());
             }
-            MeshData.SetLineFromPoints(Positions);
+            while (Positions[0].Count < 2) {
+                Positions[0].Add(new Vector3(0,0,0));
+            }
+            MeshData.SetLinesFromPoints(Positions);
         }
+    }
+
+    public void SetLinesFromPoints(List<List<Vector3>> lines) {
+        this.Positions = lines;
+        MeshData.SetLinesFromPoints(Positions);
     }
 
 }
