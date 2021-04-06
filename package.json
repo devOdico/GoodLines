@@ -1,7 +1,7 @@
 {
     "name": "dk.odico.good-lines",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "displayName": "GoodLines",
-    "description": "Its lines which are good",
-    "unity": "2019.3"
+    "description": "Lines with thickness specified in screen space",
+    "unity": "2019.4"
 }
