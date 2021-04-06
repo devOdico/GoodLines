@@ -1,4 +1,4 @@
-﻿Shader "GoodLines/ScreenWidth"
+﻿Shader "GoodLines/Line"
 {
     Properties
     {
