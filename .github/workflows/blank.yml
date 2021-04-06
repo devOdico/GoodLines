@@ -1,0 +1,28 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Add Package to Release
+on:
+  release:
+    types: [created]
+
+jobs:
+  release:
+    name: Upload Release Asset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+      - name: Create package
+        run: |
+          cd GoodLines
+          export PACKAGE_FILE=`npm pack`
+          echo "PACKAGE_PATH=GoodLines/`echo $PACKAGE_FILE`" >> $GITHUB_ENV
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }} 
+          asset_path: ${{env.PACKAGE_PATH}
+          asset_name: GoodLines
+          asset_content_type: application/octet-stream
