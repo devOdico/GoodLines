@@ -23,6 +23,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ${{env.PACKAGE_PATH}
+          asset_path: ${{env.PACKAGE_PATH}}
           asset_name: GoodLines
           asset_content_type: application/octet-stream
