@@ -23,5 +23,5 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }} 
           asset_path: ${{env.PACKAGE_PATH}}
-          asset_name: GoodLines
+          asset_name: ${{env.PACKAGE_PATH}}
           asset_content_type: application/octet-stream
