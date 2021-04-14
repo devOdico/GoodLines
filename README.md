@@ -90,3 +90,9 @@ The pixel perfect shader tries to round off vertex positions so, they always lan
 
 **Pixel Alignment**: At 0 rounded vertices are rounded to the center of a pixel. This is what you want for lines of odd (1,3,5 etc) width. For even width lines you might want to set this to 1 (or -1). If you draw a 2 thickness lines with this option set to 1 it will become 3 wide with a fully colored in center and two washed out pixels on either side in order to simulate the center of the line being directly on top of a pixel. By setting this option to 1 or -1 you can push the whole thing by half a pixel in one direction or the other so, the line becomes exactly 2 fully colored in pixels wide.  
 **Pixel Align Threshold**: Influences how close to perfectly aligned to the pixel grid a line segment has to be before the rounding happens. Should be very close to zero (0.01 seems good).
+
+## Building
+
+There is a GitHub Action which will automatically create a distributable (.tgz) from a release. Simply create a release here on GitHub, and the Action will create a package and attach it to the release. Remember to change the version in `package.json`.
+
+For development, the repo can be cloned and the package can be added via the "add package from disk.." option in the unity package manager.
