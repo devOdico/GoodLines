@@ -2,15 +2,21 @@
 {
     Properties
     {
-        _Thickness ("Thickness", Range (0, 10)) = 1
-        _ThicknessMultiplier ("Thickness Multiplier", Float) = 1
-        _Color ("Color", Color) = (1,1,1,1)
-        _MiterThreshold ("Miter Threshold", Range(-1,1)) = 0.8
-        _Perspective ("Perspective", Range(0,1)) = 0
+        _Thickness("Thickness", Range(0, 10)) = 1
+        _ThicknessMultiplier("Thickness Multiplier", Float) = 1
+        _Color("Color", Color) = (1,1,1,1)
+        _MainTex("Texture", 2D) = "white" {}
+        _MiterThreshold("Miter Threshold", Range(-1,1)) = 0.8
+        _Perspective("Perspective", Range(0,1)) = 0
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags {"Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent"}
+
+        Blend SrcAlpha OneMinusSrcAlpha
+        ZWrite Off
+        Lighting Off
+        Fog { Mode Off }
         LOD 100
 
         Pass
@@ -19,8 +25,6 @@
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            // make fog work
-            #pragma multi_compile_fog
 
             #include "UnityCG.cginc"
 
@@ -36,8 +40,8 @@
 
             struct v2f
             {
-                UNITY_FOG_COORDS(1)
                 float4 vertex : SV_POSITION;
+                float2 uv : TEXCOORD0;
             };
 
             sampler2D _MainTex;
@@ -49,9 +53,11 @@
             float _MiterThreshold;
             float _Perspective;
 
-            v2f vert (appdata v)
+            v2f vert(appdata v)
             {
                 v2f o;
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+
                 float4 current = UnityObjectToClipPos(v.vertex);
                 float4 prev = UnityObjectToClipPos(v.prev);
                 float4 next = UnityObjectToClipPos(v.next);
@@ -63,10 +69,10 @@
                 float len = _Thickness * _ThicknessMultiplier;
                 float2 dir = float2(0,0);
 
-                if(v.orientation.y == 1.0) {
+                if (v.orientation.y == 1.0) {
                     dir = normalize(next_screen - current_screen);
                 }
-                else if(v.orientation.y == 2.0) {
+                else if (v.orientation.y == 2.0) {
                     dir = normalize(current_screen - prev_screen);
                 }
                 else {
@@ -77,7 +83,7 @@
 
                     dirB *= flip;
 
-                    float2 tangent = (dirA+dirB)/2; //Divide by two normalizes since len is 2.
+                    float2 tangent = (dirA + dirB) / 2; //Divide by two normalizes since len is 2.
                     float2 perp_dirA = float2(-dirA.y, dirA.x);
                     float2 perp_tangent = float2(-tangent.y, tangent.x);
 
@@ -95,18 +101,16 @@
                 normal *= _ScreenParams.zw - 1; // Equivalent to `normal /= _ScreenParams.xy` but with less division.
 
                 float2 offset = normal * v.orientation.x;
-                o.vertex = current + float4(offset*pow(current.w, 1 - _Perspective), 0, 0)
+                o.vertex = current + float4(offset * pow(current.w, 1 - _Perspective), 0, 0);
 
-                UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag(v2f i) : SV_Target
             {
                 // Set the color
-                fixed4 col = _Color;
-                // apply fog
-                UNITY_APPLY_FOG(i.fogCoord, col);
+                fixed4 col = tex2D(_MainTex, i.uv);
+                col *= _Color;
                 return col;
             }
             ENDCG
